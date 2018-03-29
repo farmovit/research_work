@@ -12,8 +12,7 @@
 
 #define COMMON_EPS 1e-9
 
-namespace tracking_tools
-{
+namespace tracking_tools {
     template<class T>
     Eigen::MatrixXd make_matrix(std::size_t m, std::size_t n, std::vector<T> &input_v) {
         std::size_t size = input_v.size();
