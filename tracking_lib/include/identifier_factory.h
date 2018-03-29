@@ -7,20 +7,20 @@
 class abstract_identifier_factory
 {
 public:
-  abstract_identifier_factory(){}
+    abstract_identifier_factory(){}
   
-  virtual void parse(const pugi::xml_node &node) = 0;
+     virtual void parse(const pugi::xml_node &node) = 0;
   
-  virtual std::shared_ptr<abstract_identifier_factory> create() = 0;
+     virtual std::shared_ptr<abstract_identifier_factory> create() = 0;
 };
 
 
 class all_target_identifier_factory: public abstract_identifier_factory
 {
 public:
-  all_target_identifier_factory(){}
+    all_target_identifier_factory(){}
   
-  virtual void parse(const pugi::xml_node &node);
+    virtual void parse(const pugi::xml_node &node);
   
-  virtual std::shared_ptr<abstract_identifier_factory> create();
+    virtual std::shared_ptr<abstract_identifier_factory> create();
 };

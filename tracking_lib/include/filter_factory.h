@@ -4,28 +4,25 @@
 
 #include "filter.h"
 #include "pugixml.hpp"
+#include "pugi_tools.h"
 
 #include <Eigen/Dense>
 
 class abstract_filter_factory
 {
 public:
-  abstract_filter_factory(){}
-  
-  virtual void parse(const pugi::xml_node &node) = 0;
-  
-  virtual std::shared_ptr<abstract_filter> create() = 0;
+	abstract_filter_factory(){}
+	virtual void parse(const pugi::xml_node &node) = 0;
+	virtual std::shared_ptr<abstract_filter> create() = 0;
 };
 
 
 class alpha_beta_filter_factory: public abstract_filter_factory
 {
 public:
-  alpha_beta_filter_factory(){}
-  
-  virtual void parse(const pugi::xml_node &node);
-  
-  virtual std::shared_ptr<abstract_filter> create();
+	alpha_beta_filter_factory(){}
+	virtual void parse(const pugi::xml_node &node);
+	virtual std::shared_ptr<abstract_filter> create();
 
 private:
 	double m_alpha;
@@ -36,11 +33,9 @@ private:
 class alpha_beta_gamma_filter_factory: public abstract_filter_factory
 {
 public:
-  alpha_beta_gamma_filter_factory(){}
-  
-  virtual void parse(const pugi::xml_node &node);
-  
-  virtual std::shared_ptr<abstract_filter> create();
+	alpha_beta_gamma_filter_factory(){}
+	virtual void parse(const pugi::xml_node &node);
+	virtual std::shared_ptr<abstract_filter> create();
 
 private:
 	double m_alpha;
@@ -52,14 +47,9 @@ private:
 class static_kalman_filter_factory: public abstract_filter_factory
 {
 public:
-  static_kalman_filter_factory(){}
-  
-  virtual void parse(const pugi::xml_node &node);
-  
-  virtual std::shared_ptr<abstract_filter> create();
-
-	Eigen::MatrixXd get_matrix(const pugi::xml_node &);
-	Eigen::VectorXd get_vector(const pugi::xml_node &);
+	static_kalman_filter_factory(){}
+	virtual void parse(const pugi::xml_node &node);
+	virtual std::shared_ptr<abstract_filter> create();
 
 	Eigen::MatrixXd get_H() const { return m_H; }
 	Eigen::MatrixXd get_R() const { return m_R; }

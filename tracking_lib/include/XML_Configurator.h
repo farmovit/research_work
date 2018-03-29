@@ -15,8 +15,7 @@
 class XML_Configurator
 {
 public:
-  XML_Configurator()
-		: m_tracking_object_factory_creator(nullptr) {}
+  	XML_Configurator() : m_tracking_object_factory_creator(nullptr) {}
 
 	void parse(const std::string & );
 	

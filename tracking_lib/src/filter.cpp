@@ -6,50 +6,33 @@
 #include <cfloat>
 #include <sstream>
 
-#include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #define _DEBUG_FILTRATION 0
 
 
+abstract_filter::abstract_filter(bool flag = false) : m_is_initialize(flag) {}
 
-abstract_filter::abstract_filter(bool flag = false) 
-	: 
-		m_is_initialize(flag) 
-{
-}
-
-bool abstract_filter::check_state() const
-{
+bool abstract_filter::check_state() const {
 	return m_is_initialize;
 }
 
-bool abstract_filter::check_time(const measurement_data& next_data)
-{
-	const double allowed_time_res = 5e-5; // seconds;
-	
+bool abstract_filter::check_time(const measurement_data& next_data) {
+	const double allowed_time_res = 5e-5; // seconds
 	return fabs(next_data.time - m_filtrated_data.time_last) > allowed_time_res;
 }
 
-filter_params abstract_filter::get_filtrated_data() 
-{
+filter_params abstract_filter::get_filtrated_data() {
 	return m_filtrated_data;
 }
 
 /*----------------------------- ALPHA-BETA ---------------------------------*/
 
-alpha_beta_filter::alpha_beta_filter(
-	const double& a_alpha, 
-	const double& a_beta
-) 
-	: 
-		m_alpha(a_alpha), 
-		m_beta(a_beta)
-{
-} 
+alpha_beta_filter::alpha_beta_filter(const double& a_alpha, const double& a_beta) :
+	m_alpha(a_alpha), m_beta(a_beta)
+{}
 
-void alpha_beta_filter::initialize(const filter_params& from)
-{
+void alpha_beta_filter::initialize(const filter_params& from) {
 #ifdef _DEBUG_ALPHA	
   std::cout << "Initializing filter" << std::endl;
 #endif
@@ -58,10 +41,8 @@ void alpha_beta_filter::initialize(const filter_params& from)
 	m_is_initialize = true;
 }
 
-bool alpha_beta_filter::filtrate(const measurement_data& next_data)
-{
-	if(!check_time(next_data))
-	{
+bool alpha_beta_filter::filtrate(const measurement_data& next_data) {
+	if(!check_time(next_data)) {
 		return false;
 	}
 
@@ -77,7 +58,6 @@ bool alpha_beta_filter::filtrate(const measurement_data& next_data)
 #endif	
 	
 	double residual = next_data.cos_v - extrapolated_angle;
-	
 	double corrected_angle = extrapolated_angle + m_alpha * residual;
 	double corrected_speed = extrapolated_speed + (m_beta * residual) / delta_time;
 
@@ -98,25 +78,21 @@ bool alpha_beta_filter::filtrate(const measurement_data& next_data)
 alpha_beta_gamma_filter::alpha_beta_gamma_filter(
 	const double& a_alpha, 
 	const double& a_beta,
-	const double& a_gamma
-) 
-	: 
-		m_alpha(a_alpha), 
-		m_beta(a_beta), 
-		m_gamma(a_gamma)
+	const double& a_gamma)
+        :
+		    m_alpha(a_alpha),
+		    m_beta(a_beta),
+		    m_gamma(a_gamma)
 {
 }
 
-void alpha_beta_gamma_filter::initialize(const filter_params& from)
-{
+void alpha_beta_gamma_filter::initialize(const filter_params& from) {
 	m_filtrated_data = from;
 	m_is_initialize = true;
 }
 
-bool alpha_beta_gamma_filter::filtrate(const measurement_data& next_data)
-{
-	if(!check_time(next_data))
-	{
+bool alpha_beta_gamma_filter::filtrate(const measurement_data& next_data) {
+	if(!check_time(next_data)) {
 		return false;
 	}
 	
@@ -149,24 +125,21 @@ bool alpha_beta_gamma_filter::filtrate(const measurement_data& next_data)
 
 static_kalman_filter::static_kalman_filter(
 	const Eigen::MatrixXd& a_H,
-  const Eigen::MatrixXd& a_R,
+	const Eigen::MatrixXd& a_R,
 	const Eigen::MatrixXd& a_F,
 	const Eigen::MatrixXd& a_Q,
 	const Eigen::MatrixXd& a_P,
-	const Eigen::VectorXd& a_Xk_
-) 
+	const Eigen::VectorXd& a_Xk_)
 	: 
 		m_H(a_H),
 		m_R(a_R),
 		m_F(a_F), 
 		m_Q(a_Q),
-    m_P(a_P),
+    	m_P(a_P),
 		m_Xk_(a_Xk_)
-{
-}
-	
-void static_kalman_filter::initialize(const filter_params& from)
-{
+{}
+
+void static_kalman_filter::initialize(const filter_params& from) {
 	set_Xk_(from.angle, from.speed);
 
 #if _DEBUG_FILTRATION	
@@ -184,10 +157,8 @@ void static_kalman_filter::initialize(const filter_params& from)
 	m_is_initialize = true;
 }
 
-bool static_kalman_filter::filtrate(const measurement_data& next_data)
-{
-	if(!check_time(next_data))
-	{
+bool static_kalman_filter::filtrate(const measurement_data& next_data) {
+	if(!check_time(next_data)) {
 		return false;
 	}
 	
@@ -298,116 +269,95 @@ bool static_kalman_filter::filtrate(const measurement_data& next_data)
 	return true;
 }
 
-void static_kalman_filter::set_R(const Eigen::MatrixXd& a_R) 
-{
+void static_kalman_filter::set_R(const Eigen::MatrixXd& a_R) {
 	m_R = a_R;
 }
 
-void static_kalman_filter::set_H(const Eigen::MatrixXd& a_H)
-{
+void static_kalman_filter::set_H(const Eigen::MatrixXd& a_H) {
 	m_H = a_H;
 }
 
-void static_kalman_filter::set_F(const Eigen::MatrixXd& a_F) 
-{
+void static_kalman_filter::set_F(const Eigen::MatrixXd& a_F) {
 	m_F = a_F;
 }
 
-void static_kalman_filter::set_F(const double& a_dtime) 
-{
+void static_kalman_filter::set_F(const double& a_dtime) {
 	m_F << 1, a_dtime, 0, 1;
 }
 
-void static_kalman_filter::set_P(const Eigen::MatrixXd& a_P) 
-{
+void static_kalman_filter::set_P(const Eigen::MatrixXd& a_P) {
 	m_P = a_P;
 }
 
-void static_kalman_filter::set_Q(const Eigen::MatrixXd& a_Q) 
-{
+void static_kalman_filter::set_Q(const Eigen::MatrixXd& a_Q) {
 	m_Q = a_Q;
 }
 
-void static_kalman_filter::set_Xk_(const double& angle, const double& speed) 
-{
+void static_kalman_filter::set_Xk_(const double& angle, const double& speed) {
 	m_Xk_ << angle, speed;
 }
 
-void static_kalman_filter::set_Xk_(const Eigen::VectorXd& a_Xk_) 
-{
+void static_kalman_filter::set_Xk_(const Eigen::VectorXd& a_Xk_) {
 	m_Xk_ = a_Xk_;
 }
 
 void static_kalman_filter::PrintF() {
-	std::cout << "KALMAN: m_F = " << 
-		m_F << std::endl;
+	std::cout << "KALMAN: m_F = " << m_F << std::endl;
 }
 
 void static_kalman_filter::PrintH() {
-	std::cout << "KALMAN: m_H = " << 
-		m_H << std::endl;
+	std::cout << "KALMAN: m_H = " << m_H << std::endl;
 }
 
 void static_kalman_filter::PrintQ() {
-	std::cout << "KALMAN: m_Q = " << 
-		m_Q << std::endl;
+	std::cout << "KALMAN: m_Q = " << m_Q << std::endl;
 }
 
 void static_kalman_filter::PrintR() {
-	std::cout << "KALMAN: m_R = " << 
-		m_R << std::endl;
+	std::cout << "KALMAN: m_R = " << m_R << std::endl;
 }
 
 void static_kalman_filter::PrintP() {
-	std::cout << "KALMAN: m_P = " << 
-		m_P << std::endl;
+	std::cout << "KALMAN: m_P = " << m_P << std::endl;
 }
 
 void static_kalman_filter::PrintXk_() {
-	std::cout << "KALMAN: m_Xk_ = " << 
-		m_Xk_ << std::endl;
+	std::cout << "KALMAN: m_Xk_ = " << m_Xk_ << std::endl;
 }
 
 /*----------------------------- DYNAMIC KALMAN -----------------------------*/
 
 dynamic_kalman_filter::dynamic_kalman_filter(
 	const Eigen::MatrixXd& a_H,
-  const Eigen::MatrixXd& a_R,
+  	const Eigen::MatrixXd& a_R,
 	const Eigen::MatrixXd& a_F,
 	const Eigen::MatrixXd& a_Q,
 	const Eigen::MatrixXd& a_P,
 	const Eigen::VectorXd& a_Xk_,
-	const double& a_velocity
-)
+	const double& a_velocity)
 	:
 		m_static_kalman(a_H, a_R, a_F, a_Q, a_P, a_Xk_),
 		m_velocity(a_velocity)
-{			
-}
+{}
 
 dynamic_kalman_filter::dynamic_kalman_filter(
 	const static_kalman_filter& a_kalman_filter, 
-	const double& a_velocity
-)
+	const double& a_velocity)
 	:
 		m_static_kalman(a_kalman_filter),
 		m_velocity(a_velocity)
-{
-}
+{}
 
-void dynamic_kalman_filter::initialize(const filter_params& from)
-{
+void dynamic_kalman_filter::initialize(const filter_params& from) {
 	m_filtrated_data = from;
 	m_is_initialize = true;
 	m_static_kalman.initialize(from);
 }
 
-bool dynamic_kalman_filter::filtrate(const measurement_data& a_data)
-{
+bool dynamic_kalman_filter::filtrate(const measurement_data& a_data) {
 	m_static_kalman.set_Q( get_Q( get_distance(a_data) ) );
 
-	if(!m_static_kalman.filtrate(a_data))
-	{
+	if(!m_static_kalman.filtrate(a_data)) {
 		return false;
 	}
 	
@@ -418,7 +368,8 @@ bool dynamic_kalman_filter::filtrate(const measurement_data& a_data)
 
 double dynamic_kalman_filter::get_distance(const measurement_data& a_data)
 {
-	double distance = -1*m_velocity * std::pow(std::sqrt(1 - std::pow(a_data.cos_v, 2)), 3) / ( (a_data.cos_v - m_filtrated_data.angle) / (a_data.time - m_filtrated_data.time_last) );
+	double distance = -1*m_velocity * std::pow(std::sqrt(1 - std::pow(a_data.cos_v, 2)), 3) /
+            ( (a_data.cos_v - m_filtrated_data.angle) / (a_data.time - m_filtrated_data.time_last) );
 	
 	if(distance <= 0.5) {
 		distance = 500000;
@@ -439,18 +390,15 @@ Eigen::MatrixXd dynamic_kalman_filter::get_Q(const double& distance)
 	return Q_tmp;
 }
 
-double dynamic_kalman_filter::get_Q_a(const double& distance)
-{
+double dynamic_kalman_filter::get_Q_a(const double& distance) {
 	return 0.9999651 / std::pow(distance, 1.8599);
 }
 
-double dynamic_kalman_filter::get_Q_b(const double& distance)
-{
+double dynamic_kalman_filter::get_Q_b(const double& distance) {
 	return 0.9946035 / std::pow(distance, 1.6995);
 }
 
-double dynamic_kalman_filter::get_Q_c(const double& distance)
-{
+double dynamic_kalman_filter::get_Q_c(const double& distance) {
 	return 0.99912324 / std::pow(distance, 1.63099);
 }
 
@@ -458,20 +406,16 @@ double dynamic_kalman_filter::get_Q_c(const double& distance)
 /*----------------------------- KALMAN BANK -----------------------------*/
 
 bank_of_kalman_filters::bank_of_kalman_filters(const std::vector<static_kalman_filter>& a_filters) : m_filters(a_filters)
-{
-	
-}
+{}
 
-void bank_of_kalman_filters::add_filter(const static_kalman_filter& a_filter) 
-{
+void bank_of_kalman_filters::add_filter(const static_kalman_filter& a_filter) {
 	m_filters.push_back(a_filter);
 }
 
 bool bank_of_kalman_filters::filtrate(const measurement_data& a_data)
 {
 	auto end_it = m_filters.end();
-	for(auto it = m_filters.begin(); it != end_it; ++it )
-	{
+	for(auto it = m_filters.begin(); it != end_it; ++it ) {
 		it->filtrate(a_data);
 	}
 }

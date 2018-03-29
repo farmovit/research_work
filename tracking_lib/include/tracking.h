@@ -28,8 +28,7 @@ public:
 	void delete_old(const double& );
 	
 private:
-	std::size_t get_new_number(); 
-	tracking_object_params get_extrapolated_data(identified_object_storage_ptr );
+	std::size_t get_new_number();
 	void add_new_object(const measurement_data& );
 	void set_current_object(const tracking_object& );
 	

@@ -2,7 +2,7 @@
 
 #include "structions.h"
 
-const int c_init_time = 0.03; // 1 second
+const double c_init_time = 0.03;
 
 class abstract_initializer {
 

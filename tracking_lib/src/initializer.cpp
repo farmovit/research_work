@@ -1,87 +1,65 @@
 #include "initializer.h"
-#include "structions.h"
 #include "tools.h"
-
-#include <vector>
-#include <iterator>
-#include <cmath>
-#include <stdio.h>
 
 #define _DEBUG_INITIALIZER 0
 
 using namespace std;
 
-abstract_initializer::abstract_initializer() 
-		: m_is_initialize(false) {}
+abstract_initializer::abstract_initializer() : m_is_initialize(false)
+{}
 
-bool abstract_initializer::check_state() const 
-{
+bool abstract_initializer::check_state() const {
 	return m_is_initialize;
 }
 
-void abstract_initializer::set_state(bool flag)
-{
-  m_is_initialize = flag;
+void abstract_initializer::set_state(bool flag) {
+	m_is_initialize = flag;
 }
 
-/***********************************************************/
-initializer_by_points::initializer_by_points(std::size_t a_init_counter)
-	: m_init_counter(a_init_counter)
-{
+initializer_by_points::initializer_by_points(std::size_t a_init_counter) : m_init_counter(a_init_counter) {
 	if(a_init_counter > 2) {
 		m_need_acceleration = true;
 	}
 }
 
-filter_params initializer_by_points::get_filter_param() 
-{
+filter_params initializer_by_points::get_filter_param() {
 	return m_initialized_data;
 }
 
-bool initializer_by_points::initialize(const measurement_data& from) 
-{
-  if(check_state())
-    return true;
-	
+bool initializer_by_points::initialize(const measurement_data& from) {
+  	if(check_state())	return true;
+
 	m_initialized_data.time_last = from.time;
 	m_initialized_data.angle     = from.cos_v;
 	m_initialized_data.speed     = 0.0;
 	m_initialized_data.acceleration = 0.0;
 	m_initialized_data.delta_time = 0.0;
 	
-  if(!add_data(from)) {
-		return false;
-	}
-	
-	if (m_init_vec.size() < m_init_counter) {
-     return false;
-	}
+  	if(!add_data(from)) return false;
+	if (m_init_vec.size() < m_init_counter) return false;
   
 	estimate_params();
 	return check_state();
 }
 
-bool initializer_by_points::add_data(const measurement_data& from) 
-{
-  if(m_init_vec.empty())
-  {
-    m_init_vec.push_back(from);	
-    return true;
-  }
-  Pel_Iter last = m_init_vec.end();
+bool initializer_by_points::add_data(const measurement_data& from) {
+	if(m_init_vec.empty()) {
+    	m_init_vec.push_back(from);
+    	return true;
+  	}
+
+	auto last = m_init_vec.end();
 	--last;
 	
-  if (fabs(from.time - last->time) > c_init_time)
-  {
-    m_init_vec.push_back(from);
-    return true;
-  }
+  	if (fabs(from.time - last->time) > c_init_time) {
+    	m_init_vec.push_back(from);
+    	return true;
+  	}
 
 	return false;
 }
 
-void initializer_by_points::estimate_params()
-{
+void initializer_by_points::estimate_params() {
 	bool state = false;
 	
 	double init_speed;
@@ -124,13 +102,11 @@ void initializer_by_points::estimate_params()
 	set_state(state);	  
 }
 
-bool initializer_by_points::calculate_speed(double* a_speed) 
-{
-  auto last  = m_init_vec.end() - 1;
-  auto first = m_init_vec.end() - 2;
+bool initializer_by_points::calculate_speed(double* a_speed) {
+	auto last  = m_init_vec.end() - 1;
+	auto first = m_init_vec.end() - 2;
 
-	double speed = 
-		(last->cos_v - first->cos_v) / (last->time - first->time);
+	double speed = (last->cos_v - first->cos_v) / (last->time - first->time);
 	
 	if ( (fabs(speed) < COMMON_EPS) || (fabs(speed) > 1e4) ) {
 		return false;
@@ -140,10 +116,9 @@ bool initializer_by_points::calculate_speed(double* a_speed)
 	return true;
 }
 
-bool initializer_by_points::calculate_dtime(double* a_dtime) 
-{
-  auto last  = m_init_vec.end() - 1;
-  auto first = m_init_vec.end() - 2;
+bool initializer_by_points::calculate_dtime(double* a_dtime) {
+	auto last  = m_init_vec.end() - 1;
+	auto first = m_init_vec.end() - 2;
 
 	double dtime = last->time - first->time;
 	
@@ -155,11 +130,10 @@ bool initializer_by_points::calculate_dtime(double* a_dtime)
 	return true;
 }
 
-bool initializer_by_points::calculate_acceleration(double* a_acceleration) 
-{
-  auto last   = m_init_vec.end() - 1;
-  auto middle = m_init_vec.end() - 2;
-  auto first  = m_init_vec.end() - 3;
+bool initializer_by_points::calculate_acceleration(double* a_acceleration) {
+	auto last   = m_init_vec.end() - 1;
+	auto middle = m_init_vec.end() - 2;
+	auto first  = m_init_vec.end() - 3;
 	
 	double current_time = last->time - middle->time;
 	double current_speed = 
